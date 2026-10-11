@@ -51,7 +51,7 @@
 
 环境配置完成后，对 RISC-V 交叉编译工具链、GDB 及 QEMU 的版本进行检查，结果如图 2-1 所示。
 
-![图2-1 实验环境及工具版本](images/00_environment_versions.png.png)
+![图2-1 实验环境及工具版本](images/00_environment_versions.png)
 
 从检查结果可以看到，相关工具均能够正常运行，QEMU 版本为 4.1.1，符合本次实验的环境要求。
 
@@ -68,7 +68,7 @@ make
 随后使用 QEMU 4.1.1 运行内核：
 
 ```bash
-make QEMU=/home/collin/opt/qemu-4.1.1/bin/qemu-system-riscv64 qemu
+make QEMU="$HOME/opt/qemu-4.1.1/bin/qemu-system-riscv64" qemu
 ```
 
 运行结果如图 2-2 所示。
@@ -86,7 +86,7 @@ make QEMU=/home/collin/opt/qemu-4.1.1/bin/qemu-system-riscv64 qemu
 接下来使用 GDB 调试内核。首先在终端 1 中执行：
 
 ```bash
-make QEMU=/home/collin/opt/qemu-4.1.1/bin/qemu-system-riscv64 debug
+make QEMU="$HOME/opt/qemu-4.1.1/bin/qemu-system-riscv64" debug
 ```
 
 该命令使 QEMU 进入调试模式，开放 GDB 远程连接端口，并暂停 CPU 执行。
@@ -354,7 +354,7 @@ sp = 0x80203000
 首先在终端 1 中启动 QEMU 调试模式：
 
 ```bash
-make QEMU=/home/collin/opt/qemu-4.1.1/bin/qemu-system-riscv64 debug
+make QEMU="$HOME/opt/qemu-4.1.1/bin/qemu-system-riscv64" debug
 ```
 
 该命令使用 QEMU 4.1.1，并通过 `-s -S` 参数开启 GDB 远程调试端口，同时暂停 CPU 执行。
