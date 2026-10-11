@@ -113,6 +113,8 @@ GDB 成功连接到 `localhost:1234` 后，可以读取 `bin/kernel` 中的符�
 
 首先，Makefile 调用 RISC-V 交叉编译工具链，将 C 语言和汇编源文件编译为目标文件，再根据 `tools/kernel.ld` 链接生成 ELF 文件 `bin/kernel`。随后使用 `objcopy` 将其转换为原始二进制镜像 `bin/ucore.img`，供 QEMU 加载。
 
+上述产物由第 2.2 节的 `make` 生成；同节的 QEMU 运行命令加载 `bin/ucore.img`，而 `make gdb` 从 `bin/kernel` 读取符号信息。
+
 内核的编译、加载与启动过程如下。
 
 ```text
@@ -256,7 +258,7 @@ bootstacktop:
 
 在本实验中，`bootstack` 和 `bootstacktop` 定义了一块 8 KiB 的内核栈空间，地址范围为 `0x80201000` 至 `0x80203000`。由于栈从高地址向低地址增长，因此初始 SP 应指向 `0x80203000`。
 
-为了验证这一过程，我们在 GDB 中设置内核入口断点：
+为了验证这一过程，在第 2.2 节新启动且 CPU 仍暂停的调试会话中，先设置 `kern_entry` 入口断点：
 
 ```gdb
 break *0x80200000
@@ -279,7 +281,14 @@ sp = 0x8001bd80
 0x80200004: mv    sp,sp
 ```
 
-随后使用 `si` 单步执行，并在每次执行后通过 `info registers pc sp` 检查寄存器。
+随后依次单步执行 `la` 对应的两条机器指令，每次执行后检查 PC 和 SP：
+
+```gdb
+si
+info registers pc sp
+si
+info registers pc sp
+```
 
 观察结果如下：
 
@@ -309,7 +318,15 @@ sp = 0x8001bd80
 0x80200008: j 0x8020000a <kern_init>
 ```
 
-继续使用 `si` 执行该指令后，GDB 显示：
+此时 PC 停在 `0x80200008`，继续单步执行跳转，并检查寄存器和当前位置的符号：
+
+```gdb
+si
+info registers pc sp
+info symbol $pc
+```
+
+GDB 显示：
 
 ```text
 pc = 0x8020000a <kern_init>
@@ -331,6 +348,8 @@ sp = 0x80203000
 本练习通过 GDB 观察 RISC-V CPU 从复位地址开始执行，经过 OpenSBI 初始化，最终进入 uCore 内核的过程，并分析最初执行的几条指令。
 
 #### （1）使用 GDB 调试内核启动过程
+
+两个终端均在工程的 `code` 目录中操作。若 CPU 已离开复位状态，先在终端 2 用 `quit` 退出 GDB，再在终端 1 按 `Ctrl+A` 后按 `x` 退出 QEMU，随后重新启动两者；仅重新连接原 QEMU 不能使 CPU 回到 `0x1000`。
 
 首先在终端 1 中启动 QEMU 调试模式：
 
@@ -378,9 +397,11 @@ x/5i $pc
 ```gdb
 break *0x80000000
 continue
+info registers pc
+x/i $pc
 ```
 
-GDB 成功命中断点，再次检查 PC：
+GDB 成功命中断点，检查到 PC：
 
 ```text
 pc = 0x80000000
@@ -405,6 +426,7 @@ pc = 0x80000000
 ```gdb
 break *0x80200000
 continue
+info registers pc
 ```
 
 GDB 成功停在 `kern_entry`，观察到：
@@ -413,7 +435,7 @@ GDB 成功停在 `kern_entry`，观察到：
 pc = 0x80200000 <kern_entry>
 ```
 
-随后单步执行入口汇编，完成栈初始化并进入 `kern_init()`。这部分的 PC 和 SP 变化已经在练习 1 中验证，这里不再重复。
+此时接续练习 1 中查看寄存器和入口汇编、再执行三次 `si` 的步骤，完成栈初始化并进入 `kern_init()`。这部分的 PC 和 SP 变化见练习 1。
 
 通过以上调试，可以确认本实验的启动过程为：
 
@@ -451,23 +473,27 @@ kern_init：0x8020000a
 
 #### （3）补充验证：SBI 控制台输出过程
 
-在完成启动流程的调试后，我们还使用 GDB 观察了内核通过 SBI 输出字符的过程。
-
-首先在 `sbi_console_putchar()` 函数处设置断点：
+在完成启动流程的调试后，我们还使用 GDB 观察了内核通过 SBI 输出字符的过程。从上述步骤刚进入 `kern_init()`、尚未执行输出的位置继续，首先在 `sbi_console_putchar()` 函数处设置断点：
 
 ```gdb
 break sbi_console_putchar
 continue
+print ch
 ```
 
 程序成功停在该函数，GDB 显示当前字符参数为 `ch=40 '('`，与启动字符串 `(THU.CST) os is loading ...` 的第一个字符相同。
 
-随后对 `sbi_console_putchar()` 进行反汇编，找到 `ecall` 指令的位置，并设置断点：
+随后反汇编该函数，按本次构建的 `ecall` 地址设置断点，并检查参数：
 
 ```gdb
+disassemble sbi_console_putchar
 break *0x80200492
 continue
+info registers pc a0 a1 a2 a7
+x/i $pc
 ```
+
+其中 `0x80200492` 是本次构建的 `ecall` 地址；若重新编译，应以反汇编结果为准。
 
 在执行 `ecall` 前，检查相关寄存器，得到以下结果：
 
@@ -485,7 +511,15 @@ continue
 0x80200492: ecall
 ```
 
-接着执行一次 `si`，观察到：
+接着执行一次 `si`，查看 PC、异常寄存器及当前指令：
+
+```gdb
+si
+info registers pc mcause mepc
+x/5i $pc
+```
+
+观察到：
 
 ```text
 pc = 0x80000474
