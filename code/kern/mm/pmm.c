@@ -61,7 +61,48 @@ size_t nr_free_pages(void) {
     return pmm_manager->nr_free_pages();
 }
 
-//lab2 function1 YOUR CODE
+//lab2 function1 2411276林靖然
+static void page_init(void) {
+    extern char end[];
+    uint64_t mem_base = get_memory_base();
+    uint64_t mem_size = get_memory_size();
+    if (mem_base != DRAM_BASE || mem_size == 0 ||
+        mem_base + mem_size < mem_base) {
+        panic("invalid physical memory from DTB");
+    }
+
+    uint64_t mem_end = mem_base + mem_size;
+    cprintf("physical memory: [0x%016lx, 0x%016lx)\n", mem_base, mem_end);
+
+    uint64_t maxpa = mem_end < PHYSICAL_MEMORY_END ? mem_end : PHYSICAL_MEMORY_END;
+    maxpa = ROUNDDOWN(maxpa, PGSIZE);
+    if (maxpa <= KERNEL_BEGIN_PADDR) {
+        panic("no manageable physical memory");
+    }
+
+    va_pa_offset = PHYSICAL_MEMORY_OFFSET;
+    npage = PPN(maxpa);
+    pages = (struct Page *)ROUNDUP((uintptr_t)end, PGSIZE);
+    uintptr_t pages_pa = PADDR(pages);
+    size_t page_count = npage - nbase;
+    if (pages_pa < KERNEL_BEGIN_PADDR || pages_pa >= maxpa ||
+        page_count > (maxpa - pages_pa) / sizeof(struct Page)) {
+        panic("page descriptor array does not fit in physical memory");
+    }
+
+    uintptr_t free_pa = ROUNDUP(pages_pa + page_count * sizeof(struct Page), PGSIZE);
+    if (free_pa >= maxpa) {
+        panic("no complete free physical page");
+    }
+
+    for (size_t i = 0; i < page_count; i ++) {
+        pages[i].flags = 0;
+        SetPageReserved(&pages[i]);
+        pages[i].property = 0;
+        set_page_ref(&pages[i], 0);
+    }
+    init_memmap(pages + (PPN(free_pa) - nbase), (maxpa - free_pa) / PGSIZE);
+}
 
 /* pmm_init - initialize the physical memory management */
 void pmm_init(void) {
