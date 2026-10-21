@@ -4,6 +4,65 @@
 #include <stdio.h>
 
 //lab2 function2-2 YOUR CODE
+static free_area_t free_area;
+
+#define free_list (free_area.free_list)
+#define nr_free (free_area.nr_free)
+static void
+best_fit(void)
+{
+    list_init(&free_list);
+    nr_free=0;
+}
+
+static void
+best_init_memmap(struct Page *base,size_t n)
+{
+    assert(n>0);
+    struct Page *p=base;
+    for(;p!=base+n;p++)
+    {
+        assert(PageReserved(p));
+        p->flags=p->property=0;
+        set_page_ref(p,0);
+    }
+    base->property=n;
+    SetPageProperty(base);
+    nr_free+=n;
+    if(list_empty(&free_list))
+    {
+        list_add(&free_list,&(base->page_link));
+    }
+    else
+    {
+        list_entry_t* le=&free_list;
+        while((le=list_next(le))!=&free_list)
+        {
+            struct Page* page=le2page(le,page_link);
+            if(base<page)
+            {
+                list_add_before(le,&(base->page_link));
+                break;
+            }
+            else if(list_next(le)==&free_list)
+            {
+                list_add(le,&(base->page_link));
+            }
+            break;
+        }
+    }
+}
+
+static struct Page *
+best_alloc_pages(size_t n)
+{
+    assert(n>0);
+    if(n>nr_free)
+    {
+        return NULL;
+    }
+
+}
 
 // Framework tests: students must not modify basic_check or best_fit_check.
 static void
@@ -136,3 +195,4 @@ best_fit_check(void) {
     cprintf("grading: %d / %d points\n", score, sumscore);
     #endif
 }
+
