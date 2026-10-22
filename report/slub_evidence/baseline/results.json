@@ -1,0 +1,42 @@
+{
+  "recorded_at_asia_singapore": "20261022T142957",
+  "base_commit": "458450edb61070685462b500a7d49286a6358f7c",
+  "baseline_from_committed_tree": true,
+  "compiler": "riscv64-unknown-elf-gcc (g1b306039ac4) 15.1.0",
+  "qemu": "QEMU emulator version 4.1.1",
+  "qemu_path": "/home/collin/opt/qemu-4.1.1/bin/qemu-system-riscv64",
+  "memory": "128M",
+  "source_hashes": {},
+  "cases": [
+    {
+      "name": "baseline-buddy-128M",
+      "manager": "buddy_fit_pmm_manager",
+      "passed": true,
+      "build_command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-"
+      ],
+      "build_exit_code": 0,
+      "image_sha256": "bdffc28f6578e611bbabf83c7e30dd27b4db5f2a1f193aed2517961cc864a2d2",
+      "boot_command": [
+        "/home/collin/opt/qemu-4.1.1/bin/qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-bios",
+        "default",
+        "-device",
+        "loader,file=/tmp/ucore-slub-bf8ug27s/code/bin/ucore.img,addr=0x80200000"
+      ],
+      "stop_reason": "success_marker",
+      "qemu_exit_code_after_stop": 0,
+      "duration_seconds": 0.082,
+      "success_marker": "check_alloc_page() succeeded!"
+    }
+  ]
+}
