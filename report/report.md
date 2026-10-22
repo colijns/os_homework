@@ -44,10 +44,8 @@
 
 | 成员 | AI 编程工具 | 底层模型 |
 |------|------------|---------|
-| 学号1-姓名1 | [例如：Cline（VS Code插件） / Claude Code（终端 Agent） / DeepSeek Harness等] | [例如：Claude Sonnet 4.5 / GPT-5.5 / DeepSeek-V4-Flash等]  |
-| 学号2-姓名2 | | |
 | 2411276-林靖然 | Codex | GPT-6 |
-
+| 2411294-王烨 |ChatGLM| GLM-5.3|
 ---
 
 ### 2.2 开发环境
@@ -157,11 +155,117 @@ init_memmap(pages + (PPN(free_pa) - nbase),
 **负责人：** [学号-姓名]
 
 ### 4.2.2 任务二：实现 Best-Fit 连续物理内存分配算法
-**负责人：** [学号-姓名]
+**负责人：** 2411294-王烨
 
+Best-fit 算法与 First-fit 算法的唯一区别在于页面分配。First-fit 算法将空闲分区链以地址递增的顺序连接，在进行内存分配时，从链首开始顺序查找，直到找到一块分区的大小可以满足需求时，按照该作业的大小，从该分区中分配出内存，将剩下的空闲分区仍然链在空闲分区链中。而 Best-fit 算法的目标是在所有可满足请求的空闲块中选出最小的一块，使切割后产生的剩余碎片尽量小，从而尽量保住大块。
+
+需要说明的是，本实现并没有把链表真正按大小排序，而是沿用 First-Fit 的地址有序链表，在分配时遍历整条链表选出最小可满足块，效果等价于按大小取最优，且释放时可复用同一套"按地址插入 + 相邻合并"的逻辑。
+
+**需要实现/修改的函数：**
+````c
+static void best_fit_init(void); // 与 default 相同
+static void best_fit_init_memmap(struct Page *base, size_t n); // 与 default 相同
+static struct Page *best_fit_alloc_pages(size_t n); // 核心差异：全表扫描取最小合适块
+static void best_fit_free_pages(struct Page *base, size_t n); // 与 default 相同
+````
+
+并在 `best_fit_pmm_manager` 中绑定上述六个成员函数。
+
+由于与 First-Fit（`default_pmm.c`）相比，只有 `alloc_pages` 的查找策略不同，其余函数保持一致，该部分没有借助AI实现，完全使用人工编写。
+
+对于`alloc_pages`的核心实现如下：
+````c
+struct Page *page = NULL;
+size_t minsize = nr_free + 1; // 空闲块不可能大于空闲页总数
+while ((le = list_next(le)) != &free_list) { // 遍历整条链表
+    struct Page *p = le2page(le, page_link);
+    if ((p->property >= n) && (p->property < minsize))
+    {
+    page = p; // 记录当前最优块
+    minsize = p->property;
+    }
+}
+````
+#### 实现检查与验证
+
+编译通过，且`make grade` 输出`grading: 6 / 6 points`。
+
+#### 算法可改进的部分
+事实上，First-Fit 平均只需扫描链表前半段，而 Best-Fit 的最坏情况和平均情况都是 O(m)。当系统长时间运行、空闲链被切割得越来越碎时，m 增长会直接拖慢每一次分配。工程上可考虑三种典型改进：
+
+1. **平衡树索引**：把空闲块按 `(size, addr)` 作为关键字插入红黑树，分配时查 `lower_bound(n)` 即得最小可满足块，复杂度降为 O(log m)；同时仍保留一条按地址有序的双向链表用于 O(1) 相邻合并。
+2. **最小堆 / 优先队列**：以块大小为堆键，分配取堆顶后再检查是否 ≥ n，不足则弹出继续取；释放时插入堆。
+3. **分级空闲链表**：按块大小划分若干档（如 1、2、4…2^k 或对数分桶），每档一条链表；分配先在最小非空档内找，找不到再向上一档。
 ### 4.2.3 任务三：Buddy System（伙伴系统）分配算法
-**负责人：** [学号-姓名]
+**负责人：** 2411294-王烨
 
+伙伴系统把空闲内存组织成大小为 `2^order`页的块，并按阶（order）分类管理：任何大小为 2^k 页、起始页号按 2^k 对齐的块，其"伙伴"是同阶、页号仅在第 k 位上相反的块（`pfn XOR 2^k`）。分配时自满足需求的最低阶向上找块、再逐级对半分裂；释放时反复与伙伴合并，直到不能合并为止。这一结构以 O(log n) 的代价换取了分裂与合并的快速进行。
+
+#### 模块功能描述
+
+伙伴系统把物理页按 `2^order` 分级管理：第 `order` 级空闲链表中的每个空闲块包含 `2^order` 个连续物理页。空闲块只由“块头页”标识：块头 `PG_property=1` 且 `property=2^order`，块内其余页的 `flags/property` 必须为 0。分配时把请求页数向上取整到不小于 `n` 的最小 `2^k`，从第 `k` 级开始向上找到第一个非空链表，摘取大块后逐级二分，右半块挂回低一级链表，左半块继续用于分裂，最终返回左半块首页。释放时按同样规则向上取整，利用物理页号计算伙伴：
+
+```c
+buddy_pfn = pfn ^ (1 << order);
+```
+
+若伙伴是同一阶的空闲块头，则摘下伙伴并与当前块合并，块头取地址较低者，继续向更高阶合并；否则停止合并并将最终块挂入对应级链表。
+
+**需要实现/修改的函数：**
+
+```c
+static void buddy_init(void);
+static void buddy_init_memmap(struct Page *base, size_t n);
+static struct Page *buddy_alloc_pages(size_t n);
+static void buddy_free_pages(struct Page *base, size_t n);
+static size_t buddy_nr_free_pages(void);
+static void buddy_check(void);
+```
+
+并在 `buddy_fit_pmm_manager` 中绑定上述六个成员函数。
+
+#### 需求规格与提示词
+
+本任务采用 `[PROMPT]—[RELY]—[GUARANTEE]—[SPECIFICATION]` 四段式提示词辅助完善 `kern/mm/buddy_fit_pmm.c`。其中
+`buddy_fit_pmm.h`和`buddy_fit_pmm.c`中部分初始化函数为人工实现，提示词只针对伙伴系统分配算法本身。
+
+**Pre-Condition：**
+
+- `buddy_init()` 已初始化 `free_area[0..BUDDY_MAX_ORDER-1]` 与全局 `nr_free`；
+- `buddy_init_memmap()` 收到的页均为 `PageReserved`；
+- `alloc_pages/free_pages` 的 `n > 0`；
+- `free_pages` 释放的页不能是保留页，也不能已经是空闲块头，防止重复释放。
+
+**Post-Condition：**
+
+- `buddy_init_memmap(base, n)` 按物理页号自然对齐，把 `[base, base+n)` 贪心切分为若干 `2^order` 块并挂入对应级链表，`nr_free` 累计为 `n`；
+- `buddy_alloc_pages(n)` 返回满足请求的最小 `2^k` 连续页的首个 `Page`，失败返回 `NULL` 且不改变分配器状态；
+- `buddy_free_pages(base, n)` 按与分配相同的向上取整规则归还，定位同阶空闲伙伴并逐级合并，最终块入链，`nr_free` 增加 `2^k`；
+- `buddy_check()` 覆盖单页分配/释放、非 2 幂请求的向上取整与块对齐断言、大块分裂后分两半释放的完全合并、连续多页分配后逆序释放的页数守恒。
+
+#### 最终提示词
+
+最终提示词原文见 [prompt.md](./prompt.md)，其验收目标为 `buddy_check succeeded!` 与 `check_alloc_page() succeeded!`。四段式提示词中 `PROMPT`限定修改 `kern/mm/buddy_fit_pmm.c`，完善 `buddy_fit_pmm_manager` 的成员函数；保留已有代码、注释、缩进和命名风格，不新增无关文件或全局状态。`RELY`列出 `page2ppn()`、`pages`、`nbase`、`npage`、`PageProperty`、`SetPageProperty`、`ClearPageProperty` 等接口；`GUARANTEE`固定 `buddy_init`、`buddy_init_memmap`、`buddy_alloc_pages`、`buddy_free_pages`、`buddy_nr_free_pages`、`buddy_check` 的签名和调用关系；`SPECIFICATION`：写明 `n <= 0` 断言、`init_memmap` 收到未 `Reserved` 页断言、空闲页不足或无足够大连续块时返回 `NULL`、`init_memmap` 自然对齐贪心切分、`alloc_pages` 向上取整并逐级分裂、`free_pages` 用 `pfn XOR 2^order` 找伙伴并按同阶空闲块头合并、块头取地址低者、`buddy_check` 覆盖指导书要求的测试用例。
+
+#### check 测试覆盖的核心行为与边界情况
+
+`buddy_check()` 以 `nr_free_store` 保存初始空闲页数，并在每类操作后要求 `nr_free == nr_free_store`，测试逻辑全部收在 `buddy_fit_pmm.c` 内部，通过 `.check` 成员触发。它覆盖了以下核心行为和边界情况：
+
+- **最小请求与基本分配/释放**：连续分配三个单页 `p0、p1、p2`，断言三者非空且互不相同、引用计数为 0、`page2pa(p0) < npage * PGSIZE`，随后逐个释放并检查空闲页数恢复。这覆盖了 `order=0` 的最小块分配、释放入链和全局计数行为。
+- **非 2 的幂请求的向上取整与块对齐**：`alloc_pages(5)` 应返回一个 `order=3` 的 8 页块；断言 `(page2ppn(p3) & (8 - 1)) == 0` 直接验证 8 页块起始物理页号按 8 页对齐；断言 `!PageProperty(p3)` 验证返回块头已不再是空闲块。随后 `free_pages(p3, 5)` 必须按同样的向上取整规则归还 8 页，并保持 `nr_free` 守恒。这覆盖了非 2 幂请求的取整、分裂、释放取整对称性。
+- **大块分裂与伙伴完全合并**：`alloc_pages(64)` 返回 `order=6` 的 64 页块，并断言其物理页号按 64 页对齐；随后分别释放 `p4` 的 32 页和 `p4 + 32` 的 32 页。由于 `p4` 按 64 页对齐，`p4` 与 `p4 + 32` 是 `order=5` 的伙伴，第二次释放应触发逐级合并回 `order=6`，最终 `nr_free` 恢复。这覆盖了伙伴异或定位、同阶空闲块头判断、块头取低地址以及逐级合并。
+- **连续多页分配与逆序释放的页数守恒**：连续分配最多 64 个单页到 `stress[]`，要求 64 次全部成功；再按逆序逐个释放，最后要求 `nr_free == nr_free_store`。这覆盖了重复分配/释放、不同来源的空闲块、逆序释放时合并顺序变化，以及不泄漏、不重复计数。
+- **边界大小组合**：测试包含 `n=1`、`n=5`（非 2 幂）、`n=32/64`（2 的幂）、连续 64 次单页分配等不同规模，能同时触发小阶分配、大块分裂、释放合并和批量操作路径。
+
+`buddy_check()` 没有显式构造“全局空闲页不足”或“空闲页数足够但没有足够大连续块”的失败分支；这两类分支由 `buddy_alloc_pages()` 中 `n > nr_free` 与向上查找非空链表的逻辑保证，测试通过成功路径和每轮页数守恒间接约束其不会误改状态。
+
+#### 为什么这些测试能够有效检验 Buddy System 实现
+
+- **页数守恒检查能发现取整不对称和计数错误**：每次测试前后比较 `nr_free`，如果 `alloc_pages(5)` 按 8 页分配而 `free_pages(5)` 只归还 5 页，或合并后 `nr_free` 多减/多加，都会立即失败。
+- **对齐断言直接验证 Buddy 的核心不变量**：`order=k` 的空闲块起始物理页号必须按 `2^k` 对齐。`(page2ppn(p3) & 7) == 0` 和 `(page2ppn(p4) & 63) == 0` 能发现分裂后返回错误半块、块头选择错误，或用数组下标代替物理页号计算伙伴等问题。
+- **块头属性检查验证返回状态正确**：`!PageProperty(p3)` 能发现分配后未清除块头空闲属性、返回块内非头页等错误。
+- **两半释放能验证伙伴定位和逐级合并**：分别释放 `p4` 和 `p4 + 32` 后必须完全合并；若伙伴计算未使用 `pfn ^ (1 << order)`、未检查伙伴是否为同阶空闲块头，或合并后未更新块头，页数守恒或后续分配会失败。
+- **逆序批量释放能验证重复操作和合并顺序**：连续分配 64 个单页再逆序释放，覆盖多次分裂、入链、合并和计数更新，能发现链表损坏、重复释放、合并遗漏等问题。
 ### 4.2.4 Challenge：任意大小的内存单元 SLUB 分配算法
 **负责人：** [学号-姓名]
 
