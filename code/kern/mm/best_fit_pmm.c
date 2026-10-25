@@ -48,7 +48,6 @@ best_fit_init_memmap(struct Page *base,size_t n)
             {
                 list_add(le,&(base->page_link));
             }
-            break;
         }
     }
 }
