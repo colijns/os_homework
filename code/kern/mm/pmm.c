@@ -8,10 +8,10 @@
 #include <sbi.h>
 #include <stdio.h>
 #include <string.h>
+#include <../sync/sync.h>
 #include <riscv.h>
 #include <dtb.h>
 
-#include <buddy_fit_pmm.h>
 // virtual address of physical page array
 struct Page *pages;
 // amount of physical memory (in pages)
@@ -35,7 +35,7 @@ static void check_alloc_page(void);
 
 // init_pmm_manager - initialize a pmm_manager instance
 static void init_pmm_manager(void) {
-    pmm_manager = &buddy_fit_pmm_manager;
+    pmm_manager = &default_pmm_manager;
     cprintf("memory management: %s\n", pmm_manager->name);
     pmm_manager->init();
 }
@@ -48,62 +48,40 @@ static void init_memmap(struct Page *base, size_t n) {
 // alloc_pages - call pmm->alloc_pages to allocate a continuous n*PAGESIZE
 // memory
 struct Page *alloc_pages(size_t n) {
-    return pmm_manager->alloc_pages(n);
+    struct Page *page = NULL;
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        page = pmm_manager->alloc_pages(n);
+    }
+    local_intr_restore(intr_flag);
+    return page;
 }
 
 // free_pages - call pmm->free_pages to free a continuous n*PAGESIZE memory
 void free_pages(struct Page *base, size_t n) {
-    pmm_manager->free_pages(base, n);
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        pmm_manager->free_pages(base, n);
+    }
+    local_intr_restore(intr_flag);
 }
 
 // nr_free_pages - call pmm->nr_free_pages to get the size (nr*PAGESIZE)
 // of current free memory
 size_t nr_free_pages(void) {
-    return pmm_manager->nr_free_pages();
+    size_t ret;
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        ret = pmm_manager->nr_free_pages();
+    }
+    local_intr_restore(intr_flag);
+    return ret;
 }
 
-//lab2 function1 2411276林靖然
-static void page_init(void) {
-    extern char end[];
-    uint64_t mem_base = get_memory_base();
-    uint64_t mem_size = get_memory_size();
-    if (mem_base != DRAM_BASE || mem_size == 0 ||
-        mem_base + mem_size < mem_base) {
-        panic("invalid physical memory from DTB");
-    }
-
-    uint64_t mem_end = mem_base + mem_size;
-    cprintf("physical memory: [0x%016lx, 0x%016lx)\n", mem_base, mem_end);
-
-    uint64_t maxpa = mem_end < PHYSICAL_MEMORY_END ? mem_end : PHYSICAL_MEMORY_END;
-    maxpa = ROUNDDOWN(maxpa, PGSIZE);
-    if (maxpa <= KERNEL_BEGIN_PADDR) {
-        panic("no manageable physical memory");
-    }
-
-    va_pa_offset = PHYSICAL_MEMORY_OFFSET;
-    npage = PPN(maxpa);
-    pages = (struct Page *)ROUNDUP((uintptr_t)end, PGSIZE);
-    uintptr_t pages_pa = PADDR(pages);
-    size_t page_count = npage - nbase;
-    if (pages_pa < KERNEL_BEGIN_PADDR || pages_pa >= maxpa ||
-        page_count > (maxpa - pages_pa) / sizeof(struct Page)) {
-        panic("page descriptor array does not fit in physical memory");
-    }
-
-    uintptr_t free_pa = ROUNDUP(pages_pa + page_count * sizeof(struct Page), PGSIZE);
-    if (free_pa >= maxpa) {
-        panic("no complete free physical page");
-    }
-
-    for (size_t i = 0; i < page_count; i ++) {
-        pages[i].flags = 0;
-        SetPageReserved(&pages[i]);
-        pages[i].property = 0;
-        set_page_ref(&pages[i], 0);
-    }
-    init_memmap(pages + (PPN(free_pa) - nbase), (maxpa - free_pa) / PGSIZE);
-}
+//lab2 请补充你在lab2中的代码
 
 /* pmm_init - initialize the physical memory management */
 void pmm_init(void) {
