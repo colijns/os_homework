@@ -1,0 +1,376 @@
+{
+  "scope": "Lab3 A only; test C recipients are not B/C implementations",
+  "source_root": "/mnt/d/大三上/os/lab3_trap_work/code",
+  "source_sha256": {
+    "Makefile": "0b563e41c52d5d6c6eadcf92f0674e396a42147efd50ae22117517c67d81ba8f",
+    "kern/debug/assert.h": "e6c4f994c345183a9f86d77f8bd8cd6bf08520a5c3dac3a0226b0e80746bc6c6",
+    "kern/debug/kdebug.c": "7287fe355c3ecda5c099b7a3697eb8dd5065ba23cef8d9452a42ab8b28c9c8bb",
+    "kern/debug/kdebug.h": "621970559d45e23a3bc80452da0fe3fa1c67c1fc591f2a3701c3a33b942575c6",
+    "kern/debug/kmonitor.c": "12cc84438056f97251eb4ffe8036bc866df927c287f33867846ee8111095cdbe",
+    "kern/debug/kmonitor.h": "e2159fc141099ad4074f8f707c7aa4dd598bc9af3d607b86f70cba9150b9e89e",
+    "kern/debug/panic.c": "a0aabd9ef2bb01a2396f02fa21dfed96a2f403a71e302d28d39e7803ca9bbab5",
+    "kern/debug/stab.h": "3113e605e95635eb38f2faef27cf2bf6b3539c4b18ef2ac28608bdba4fc5b6e5",
+    "kern/driver/clock.c": "06529e20b95c3d90ba5ac44cecf12fb020935964c6800f6509f7fc46b4d1583d",
+    "kern/driver/clock.h": "bdd414830bcef3f71f4e4ff01db756517742249004901ca8734f2e30f99bb639",
+    "kern/driver/console.c": "c565e039de8cda244edb5a9d0046e9870b90eacea20e65f1ffdc6e4182d4e631",
+    "kern/driver/console.h": "964c039c962830691c15da313b6be9139a3fbca86512ade5fd5bae350bf5085b",
+    "kern/driver/dtb.c": "24b6e02af2f0273b39f2d368dfb726735180940bfbd50a858a4a6b1ce3d76820",
+    "kern/driver/dtb.h": "a8585e321d1d3c3445e7e28e2d1eecd8d4955315204ad86fff28b45af8a460db",
+    "kern/driver/intr.c": "04b85bb15c25690fad99550eab53cd2e40a79bf873b1681b8abc872faed76ef6",
+    "kern/driver/intr.h": "3f3881d0ea5842d2b1d93b7b2d0286356e65e4c8a0a7c7dd72de37f883737e59",
+    "kern/init/entry.S": "df8fa13bf19c7097b6ef09328a2d6fc64e116d7aa0321ec81c1eeeefbd3b58a6",
+    "kern/init/init.c": "7a880fdcc0aa7efcbaeebdc82d5bedef1a1ded9138543a1a5f41eb30635e243d",
+    "kern/libs/stdio.c": "bfb8d86465315f26cfce15d5b9ec9728a0e473c411f651ae1c289843561e5cbc",
+    "kern/mm/best_fit_pmm.c": "c0415d9309601d9c9a1927f40d62aae05d6ab1325ae78f5bce42d386e0ca65a9",
+    "kern/mm/best_fit_pmm.h": "49e887c754f3845c8fa290a69613c4dad37bafaded5cf62899f21c0168749383",
+    "kern/mm/default_pmm.c": "9814c63571cf3bc16896f22690ac71ca1b8893b98100438399f8c8b185d3d4cb",
+    "kern/mm/default_pmm.h": "85e13acb8f3f0b90c9de95016db21d4882db383213a71daa2374ec6b6a295645",
+    "kern/mm/memlayout.h": "2c061d67362528255ed8a8ddc2a9f10241b30fc5ad17a835d57bbbfe35b9492c",
+    "kern/mm/mmu.h": "75057c4508aa70bdc990ccaa86a02470cd39548c2fdd398bc019db79635f29be",
+    "kern/mm/pmm.c": "f2aedfef280567f9410f98adf95cbb85126b1c7c6a78d0e2a69e155c8ae10608",
+    "kern/mm/pmm.h": "82b0e7bb66d6e1827d252cee680187a976f25a318f3cc193da8aca4a5adce972",
+    "kern/sync/sync.h": "1f32981d6a08e2e651767741cf521902621ab83950ffc2df16e6145c788803c3",
+    "kern/trap/trap.c": "66d0a381141f5e57e873c2d06817f3d5543eeafb6c78cafd7a7b6cd7c13a8c76",
+    "kern/trap/trap.h": "1e6766da6eefbc4c8755ef18879015a30b453cffb55c1feac07debe4e56254a4",
+    "kern/trap/trapentry.S": "7e419fae4e81218ebccc7d4c2b526e9e2b419cd50adead19e894c821eb1ef66f",
+    "libs/atomic.h": "4cd70f426d4c32bc9efd5d82d9251637a80179be70d82b06aac7cac83c64cb16",
+    "libs/defs.h": "5fb960293b7c3cf559b22c36d08ffa81ff22edf4b633575869d33761d7e1ee51",
+    "libs/error.h": "77ff4d08fb84f4e50d1f67949ea896cf35adfeb7cc328a646600228cb5605777",
+    "libs/list.h": "bc6281ef203d444d1acd1e2954f97c73201974df0eb27b9d75f10b0128601b6e",
+    "libs/printfmt.c": "0e8a99504668efaf1d538a71cd829db70ddd5dce6c93e3102cd213f840a89fb0",
+    "libs/readline.c": "16d505c7ac5cb40bab0c0b57cfbae97eb47e0cad3903aeb6db7736806123994c",
+    "libs/riscv.h": "4a3ee787f54b12e4163618eed6ce825cbfef1fe3d67152a5971562f15cd2ee8b",
+    "libs/sbi.c": "8a87d40eeeee7c1027447a7c68ecbfd310a973d233da1fdd5655e143882313c0",
+    "libs/sbi.h": "ffa39439148aa22d8c8f841e6af31948a9a6591579e85e5fa0a00f7ea894afeb",
+    "libs/stdarg.h": "deee724be1034684e0e97026b674ebfb9b19be4d0a285da5626201bc16f20710",
+    "libs/stdio.h": "5afe3a6abfacaec120b2bbd149fb944298c566e750e31b71be770e78c20d27f0",
+    "libs/string.c": "d97fbebb402c48e1644db5e9438b33f10efa87965c7877e2496d5313441906df",
+    "libs/string.h": "47557a62a2b2f29639f48373bdb521a2cfdb6c1d4beedad0e3e4792b824c8dd0",
+    "tools/boot.ld": "fb6fdb3b44d58fe7a3ebacf6ce5fedf0c67c3d14d0708853965d7be55c784944",
+    "tools/function.mk": "46fab30a764a277562f3bebb6ac9cf4e11d6e1718e9698d363b78dcefc8effc6",
+    "tools/gdbinit": "ad7953cf55adfbaf79175b470cfe500c6d9cbea5b72d5edbc24e02505afc734b",
+    "tools/grade.sh": "9d7337ef425e8bc55c01805f583ae52011fe5a1caef5f4da648b63527e5ebc1f",
+    "tools/inject.py": "65e169e394571c3e63f0ca1464ca5e95eebbcaf1ccaa259d20735af26fbb43e5",
+    "tools/kernel.ld": "82e5df6e5802a00c4cab55b0e65991af03cc86facbc556ee7387742cab413a63",
+    "tools/kernel_nopage.ld": "86fdd18a858f6a1dc390d77edad69890b6302f4e4b9cf5c357920749abf0a039",
+    "tools/run_a_trap_checks.py": "7759d05c0c229ce07108e94f920f517f1f6e18534ca55d5a3d0a5f4515dd2e55",
+    "tools/sign.c": "c58302238c16e756c17085e0cb2b0100162aa08868f192c792362c976f4d3515",
+    "tools/test_lab3.c": "44646410961ef734210327beab082367ceacf8e745d426ee79853f13e3e4efb0",
+    "tools/test_lab3.h": "39a79edba6fe0d267d8e60c0e343ca5dde862faa7ba1b80e67dc3bb8de6ea854",
+    "tools/test_lab3_context.S": "692fd4bf46d69aabce682ccfd8710e76f761eea58f6f0ca09ce149f70af9ba6b",
+    "tools/vector.c": "1bc52a1b36d1d493d6ef497459ed11c45e48799835ba6d0a4808c511dc1e7aa3"
+  },
+  "base_commit": "af2c81071525e4cc38b3a68b1cb959d1a0f23467",
+  "probe_configuration": {
+    "bios": "/home/collin/opt/qemu-4.1.1/share/qemu/opensbi-riscv64-virt-fw_jump.bin",
+    "bios_sha256": "3074f95a629a6e516a3cee4d8e2de9287433e7976103cde38b6cdfd7c745254b",
+    "expected_sret_SPIE": 1,
+    "PMM": "Unfinished PMM source files excluded only in disposable probe builds",
+    "C_recipient": "Test-only frame checks and fixed breakpoint return targets; not B/C implementations"
+  },
+  "checks": {
+    "existing_SAVE_ALL_unchanged": true,
+    "baseline_B_C_handlers_missing": true,
+    "A_assembly_object_build": true,
+    "full_build_blocked_by_B_C_as_expected": true,
+    "isolated_probe_kernel_build": true,
+    "runtime_case_1": true,
+    "runtime_case_2": true,
+    "runtime_case_3": true,
+    "runtime_case_4": true,
+    "negative_control_unfilled_A": true,
+    "negative_control_wrong_a0_offset": true,
+    "source_tree_unchanged_by_validation": true
+  },
+  "commands": [
+    {
+      "command": [
+        "/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-gcc",
+        "--version"
+      ],
+      "cwd": "/mnt/d/大三上/os/lab3_trap_work/code",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/gcc_version.txt",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.024
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-system-riscv64",
+        "--version"
+      ],
+      "cwd": "/mnt/d/大三上/os/lab3_trap_work/code",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/qemu_version.txt",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.047
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/baseline",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/baseline_full_build.log",
+      "exit_code": 2,
+      "timed_out": false,
+      "seconds": 0.324
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-",
+        "obj/kern/mm/best_fit_pmm.o"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/baseline",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/baseline_pmm_object_build.log",
+      "exit_code": 2,
+      "timed_out": false,
+      "seconds": 0.033
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-",
+        "obj/kern/trap/trapentry.o"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/a_source",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/a_object_build.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.111
+    },
+    {
+      "command": [
+        "/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-objdump",
+        "-dr",
+        "/tmp/lab3-a-checks-aer9ovuj/a_source/obj/kern/trap/trapentry.o"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/a_source",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/trapentry_disassembly.txt",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.011
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/a_source",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/a_full_build_without_B_C.log",
+      "exit_code": 2,
+      "timed_out": false,
+      "seconds": 0.228
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-",
+        "KSRCDIR=kern/init kern/libs kern/debug kern/driver kern/trap"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/runtime_probe",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/probe_kernel_build.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.524
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-bios",
+        "/home/collin/opt/qemu-4.1.1/share/qemu/opensbi-riscv64-virt-fw_jump.bin",
+        "-device",
+        "loader,file=bin/ucore.img,addr=0x80200000",
+        "-monitor",
+        "none",
+        "-no-reboot"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/runtime_probe",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/probe_qemu.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.038
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-",
+        "KSRCDIR=kern/init kern/libs kern/debug kern/driver kern/trap"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/unfilled_A",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/unfilled_A_build.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.505
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-bios",
+        "/home/collin/opt/qemu-4.1.1/share/qemu/opensbi-riscv64-virt-fw_jump.bin",
+        "-device",
+        "loader,file=bin/ucore.img,addr=0x80200000",
+        "-monitor",
+        "none",
+        "-no-reboot"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/unfilled_A",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/unfilled_A_qemu.log",
+      "exit_code": 0,
+      "timed_out": true,
+      "seconds": 4.015
+    },
+    {
+      "command": [
+        "make",
+        "-j2",
+        "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-",
+        "KSRCDIR=kern/init kern/libs kern/debug kern/driver kern/trap"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/wrong_a0_offset",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/wrong_a0_offset_build.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.492
+    },
+    {
+      "command": [
+        "/usr/bin/qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-bios",
+        "/home/collin/opt/qemu-4.1.1/share/qemu/opensbi-riscv64-virt-fw_jump.bin",
+        "-device",
+        "loader,file=bin/ucore.img,addr=0x80200000",
+        "-monitor",
+        "none",
+        "-no-reboot"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/wrong_a0_offset",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/wrong_a0_offset_qemu.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.031
+    }
+  ],
+  "all_passed": true,
+  "baseline_full_build": {
+    "command": [
+      "make",
+      "-j2",
+      "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-"
+    ],
+    "cwd": "/tmp/lab3-a-checks-aer9ovuj/baseline",
+    "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/baseline_full_build.log",
+    "exit_code": 2,
+    "timed_out": false,
+    "seconds": 0.324
+  },
+  "baseline_PMM_build_blocker": {
+    "command": [
+      "make",
+      "-j2",
+      "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-",
+      "obj/kern/mm/best_fit_pmm.o"
+    ],
+    "cwd": "/tmp/lab3-a-checks-aer9ovuj/baseline",
+    "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/baseline_pmm_object_build.log",
+    "exit_code": 2,
+    "timed_out": false,
+    "seconds": 0.033
+  },
+  "a_full_build_without_B_C": {
+    "command": [
+      "make",
+      "-j2",
+      "GCCPREFIX=/home/collin/riscv-elf-toolchains/bin/riscv64-unknown-elf-"
+    ],
+    "cwd": "/tmp/lab3-a-checks-aer9ovuj/a_source",
+    "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/a_full_build_without_B_C.log",
+    "exit_code": 2,
+    "timed_out": false,
+    "seconds": 0.228
+  },
+  "probe_image_sha256": "90ef2818c3b74b82d09f546aedb683559c9bfba312d9312fa891ef75a89ac87a",
+  "negative_controls": [
+    {
+      "name": "unfilled_A",
+      "detected": true,
+      "command": [
+        "/usr/bin/qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-bios",
+        "/home/collin/opt/qemu-4.1.1/share/qemu/opensbi-riscv64-virt-fw_jump.bin",
+        "-device",
+        "loader,file=bin/ucore.img,addr=0x80200000",
+        "-monitor",
+        "none",
+        "-no-reboot"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/unfilled_A",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/unfilled_A_qemu.log",
+      "exit_code": 0,
+      "timed_out": true,
+      "seconds": 4.015
+    },
+    {
+      "name": "wrong_a0_offset",
+      "detected": true,
+      "command": [
+        "/usr/bin/qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-bios",
+        "/home/collin/opt/qemu-4.1.1/share/qemu/opensbi-riscv64-virt-fw_jump.bin",
+        "-device",
+        "loader,file=bin/ucore.img,addr=0x80200000",
+        "-monitor",
+        "none",
+        "-no-reboot"
+      ],
+      "cwd": "/tmp/lab3-a-checks-aer9ovuj/wrong_a0_offset",
+      "log": "/mnt/d/大三上/os/lab3_trap_work/report/a_trap_evidence/20261028_A_final/wrong_a0_offset_qemu.log",
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.031
+    }
+  ],
+  "source_tree_unchanged": true
+}

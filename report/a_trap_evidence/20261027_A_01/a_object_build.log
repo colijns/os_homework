@@ -1,0 +1,5 @@
++ cc kern/trap/trapentry.S
+kern/trap/trapentry.S: Assembler messages:
+kern/trap/trapentry.S:47: Error: unknown CSR `sbadaddr'
+kern/trap/trapentry.S:105:  Info: macro invoked from here
+make: *** [Makefile:118: obj/kern/trap/trapentry.o] Error 1
