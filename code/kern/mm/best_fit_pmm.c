@@ -5,6 +5,11 @@
 #include <stdio.h>
 
 //lab2 请补充你在lab2中的代码
+free_area_t free_area;                          // ← 补：分配器的实际存储
+
+#define free_list (free_area.free_list)         // ← 补
+#define nr_free    (free_area.nr_free)          // ← 补
+
 
 static void
 basic_check(void) {

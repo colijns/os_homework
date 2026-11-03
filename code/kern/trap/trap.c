@@ -8,8 +8,11 @@
 #include <riscv.h>
 #include <stdio.h>
 #include <trap.h>
+#include <sbi.h>
 
 #define TICK_NUM 100
+#define SHUTDOWN_AFTER 10     
+static int num = 0; 
 
 static void print_ticks() {
     cprintf("%d ticks\n", TICK_NUM);
@@ -81,6 +84,68 @@ void print_regs(struct pushregs *gpr) {
 }
 
 //lab3 function2 YOUR CODE
+
+void interrupt_handler(struct trapframe *tf) {
+    intptr_t cause = (tf->cause << 1) >> 1;  // 去掉 scause 最高位的 Interrupt 标志
+    switch (cause) {
+        case IRQ_U_SOFT:
+            cprintf("User software interrupt\n");
+            break;
+        case IRQ_S_SOFT:
+            cprintf("Supervisor software interrupt\n");
+            break;
+        case IRQ_H_SOFT:
+            cprintf("Hypervisor software interrupt\n");
+            break;
+        case IRQ_M_SOFT:
+            cprintf("Machine software interrupt\n");
+            break;
+        case IRQ_U_TIMER:
+            cprintf("User timer interrupt\n");
+            break;
+        case IRQ_S_TIMER:
+            clock_set_next_event();
+
+            if (++ticks % TICK_NUM == 0) {
+                print_ticks();
+                num++;
+            }
+            if (num == SHUTDOWN_AFTER) {
+                sbi_shutdown();
+            }
+            break;
+        case IRQ_H_TIMER:
+            cprintf("Hypervisor timer interrupt\n");
+            break;
+        case IRQ_M_TIMER:
+            cprintf("Machine timer interrupt\n");
+            break;
+        case IRQ_U_EXT:
+            cprintf("User external interrupt\n");
+            break;
+        case IRQ_S_EXT:
+            cprintf("Supervisor external interrupt\n");
+            break;
+        case IRQ_H_EXT:
+            cprintf("Hypervisor external interrupt\n");
+            break;
+        case IRQ_M_EXT:
+            cprintf("Machine external interrupt\n");
+            break;
+        default:
+            print_trapframe(tf);   // 无法识别的中断：输出 trapframe 兜底
+            break;
+    }
+}
+
+void exception_handler(struct trapframe *tf) {
+    /* LAB1 CHALLENGE3  YOUR CODE */
+    switch (tf->cause) {
+        default:
+            print_trapframe(tf);
+            break;
+    }
+}
 
 
 static inline void trap_dispatch(struct trapframe *tf) {
