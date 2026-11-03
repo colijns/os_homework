@@ -85,25 +85,10 @@ size_t nr_free_pages(void) {
 
 /* pmm_init - initialize the physical memory management */
 void pmm_init(void) {
-    // We need to alloc/free the physical memory (granularity is 4KB or other size).
-    // So a framework of physical memory manager (struct pmm_manager)is defined in pmm.h
-    // First we should init a physical memory manager(pmm) based on the framework.
-    // Then pmm can alloc/free the physical memory.
-    // Now the first_fit/best_fit/worst_fit/buddy_system pmm are available.
-    init_pmm_manager();
-
-    // detect physical memory space, reserve already used memory,
-    // then use pmm->init_memmap to create free page list
-    page_init();
-
-    // use pmm->check to verify the correctness of the alloc/free function in a pmm
-    check_alloc_page();
-
-    extern char boot_page_table_sv39[];
-    satp_virtual = (pte_t*)boot_page_table_sv39;
-    satp_physical = PADDR(satp_virtual);
-    cprintf("satp virtual address: 0x%016lx\nsatp physical address: 0x%016lx\n", satp_virtual, satp_physical);
+    /* Lab1 阶段不启用物理页分配器：初始化与自测均跳过，
+     * 页分配算法及其 check 留待 Lab2 恢复。 */
 }
+
 
 static void check_alloc_page(void) {
     pmm_manager->check();
