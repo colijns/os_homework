@@ -83,7 +83,7 @@ void print_regs(struct pushregs *gpr) {
     cprintf("  t6       0x%08x\n", gpr->t6);
 }
 
-//lab3 function2 YOUR CODE
+//lab3 function2 2411294 王烨
 
 void interrupt_handler(struct trapframe *tf) {
     intptr_t cause = (tf->cause << 1) >> 1;  // 去掉 scause 最高位的 Interrupt 标志
@@ -133,14 +133,23 @@ void interrupt_handler(struct trapframe *tf) {
             cprintf("Machine external interrupt\n");
             break;
         default:
+            cprintf("Unknown interrupt: cause %d\n", (int)cause);
             print_trapframe(tf);   // 无法识别的中断：输出 trapframe 兜底
             break;
     }
 }
 
 void exception_handler(struct trapframe *tf) {
-    /* LAB1 CHALLENGE3  YOUR CODE */
+    /* LAB1 CHALLENGE3  2411276 林靖然 */
     switch (tf->cause) {
+        case CAUSE_ILLEGAL_INSTRUCTION:
+            cprintf("Illegal instruction at 0x%08x\n", tf->epc);
+            tf->epc += ((*(uint16_t *)tf->epc & 0x3) == 0x3) ? 4 : 2;
+            break;
+        case CAUSE_BREAKPOINT:
+            cprintf("Breakpoint at 0x%08x\n", tf->epc);
+            tf->epc += ((*(uint16_t *)tf->epc & 0x3) == 0x3) ? 4 : 2;
+            break;
         default:
             print_trapframe(tf);
             break;
