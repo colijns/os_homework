@@ -1,4 +1,4 @@
-#include <default_pmm.h>
+#include <best_fit_pmm.h>
 #include <defs.h>
 #include <error.h>
 #include <kmalloc.h>
@@ -37,7 +37,7 @@ static void check_boot_pgdir(void);
 // init_pmm_manager - initialize a pmm_manager instance
 static void init_pmm_manager(void)
 {
-    pmm_manager = &default_pmm_manager;
+    pmm_manager = &best_fit_pmm_manager;
     cprintf("memory management: %s\n", pmm_manager->name);
     pmm_manager->init();
 }
@@ -88,6 +88,53 @@ size_t nr_free_pages(void)
 }
 
 //lab2 请补充你在lab2中的代码
+static void page_init(void)
+{
+    extern char kern_entry[];
+
+    va_pa_offset = PHYSICAL_MEMORY_OFFSET;
+
+    uint64_t mem_begin = get_memory_base();
+    uint64_t mem_size  = get_memory_size();
+    if (mem_size == 0) {
+        panic("DTB memory info not available");
+    }
+    uint64_t mem_end   = mem_begin + mem_size;
+
+    cprintf("physcial memory map:\n");
+    cprintf("  memory: 0x%08lx, [0x%08lx, 0x%08lx].\n", mem_size, mem_begin,
+            mem_end - 1);
+
+    uint64_t maxpa = mem_end;
+
+    if (maxpa > KERNTOP)
+    {
+        maxpa = KERNTOP;
+    }
+
+    extern char end[];
+
+    npage = maxpa / PGSIZE;
+    // BBL has put the initial page table at the first available page after the
+    // kernel
+    // so stay away from it by adding extra offset to end
+    pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
+
+    for (size_t i = 0; i < npage - nbase; i++)
+    {
+        SetPageReserved(pages + i);
+    }
+
+    uintptr_t freemem = PADDR((uintptr_t)pages + sizeof(struct Page) * (npage - nbase));
+
+    mem_begin = ROUNDUP(freemem, PGSIZE);
+    mem_end = ROUNDDOWN(mem_end, PGSIZE);
+    if (freemem < mem_end)
+    {
+        init_memmap(pa2page(mem_begin), (mem_end - mem_begin) / PGSIZE);
+    }
+    cprintf("vapaofset is %llu\n", va_pa_offset);
+}
 
 static void enable_paging(void)
 {
