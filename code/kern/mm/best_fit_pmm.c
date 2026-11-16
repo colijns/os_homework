@@ -47,6 +47,8 @@ best_fit_init_memmap(struct Page *base,size_t n)
             else if(list_next(le)==&free_list)
             {
                 list_add(le,&(base->page_link));
+                // LAB4 A 2411795: never insert the same list node twice.
+                break;
             }
         }
     }
@@ -121,6 +123,8 @@ best_fit_free_pages(struct Page *base,size_t n)
             else if(list_next(le)==&free_list)
             {
                 list_add(le,&(base->page_link));
+                // LAB4 A 2411795: preserve prev links for adjacent-block merging.
+                break;
             }
         }
     }

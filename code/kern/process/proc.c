@@ -218,7 +218,26 @@ init_main(void *arg)
     return 0;
 }
 
-//LAB4 function2 YOUR CODE
+//LAB4 function2 2411795: A -- allocate an unregistered process control block.
+static struct proc_struct *
+alloc_proc(void)
+{
+    struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
+    if (proc != NULL)
+    {
+        // Clear the saved context, trapframe pointer, name and resource fields.
+        memset(proc, 0, sizeof(struct proc_struct));
+        proc->state = PROC_UNINIT;
+        proc->pid = -1;
+        // Kernel threads start with the shared kernel page table (physical PA).
+        proc->pgdir = boot_pgdir_pa;
+        list_init(&(proc->list_link));
+        list_init(&(proc->hash_link));
+    }
+    return proc;
+}
+
+//LAB4 function2 YOUR CODE -- remaining thread creation/initialization functions.
 
 
 //LAB4 function3 YOUR CODE
