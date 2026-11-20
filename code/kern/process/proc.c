@@ -185,6 +185,7 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
     {
         goto fork_out;
     }
+    proc->parent = current;
     if (setup_kstack(proc) != 0)
     {
         goto bad_fork_cleanup_proc;
@@ -359,9 +360,25 @@ init_main(void *arg)
     return 0;
 }
 
-void cpu_idle(void)
-{
-    for (;;)
-    {
+void proc_run(struct proc_struct *proc) {
+    if (proc != current) {
+        bool intr_flag;
+        struct proc_struct *prev = current;
+        local_intr_save(intr_flag); {
+            current = proc;
+            // pgdir 保存页表的物理地址（satp 写法参照 enable_paging）。
+            write_csr(satp, 0x8000000000000000 | (proc->pgdir >> RISCV_PGSHIFT));
+            flush_tlb();
+            switch_to(&(prev->context), &(current->context));
+        }
+        local_intr_restore(intr_flag);
+    }
+}
+
+void cpu_idle(void) {
+    while (1) {
+        if (current->need_resched) {
+            schedule();
+        }
     }
 }
