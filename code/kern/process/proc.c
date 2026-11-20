@@ -80,6 +80,135 @@ static int nr_process = 0;
 void kernel_thread_entry(void);
 void forkrets(struct trapframe *tf);
 void switch_to(struct context *from, struct context *to);
+static int get_pid(void);
+static void hash_proc(struct proc_struct *proc);
+static int copy_mm(uint32_t clone_flags, struct proc_struct *proc);
+static void copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf);
+static int setup_kstack(struct proc_struct *proc);
+static int init_main(void *arg);
+
+static struct proc_struct *
+alloc_proc(void)
+{
+    struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
+    if (proc != NULL)
+    {
+        // Clear the saved context, trapframe pointer, name and resource fields.
+        memset(proc, 0, sizeof(struct proc_struct));
+        proc->state = PROC_UNINIT;
+        proc->pid = -1;
+        // Kernel threads start with the shared kernel page table (physical PA).
+        proc->pgdir = boot_pgdir_pa;
+        list_init(&(proc->list_link));
+        list_init(&(proc->hash_link));
+    }
+    return proc;
+}
+
+void proc_init(void)
+{
+    int i;
+    list_init(&proc_list);
+    for (i = 0; i < HASH_LIST_SIZE; i++)
+    {
+        list_init(hash_list + i);
+    }
+
+    if ((idleproc = alloc_proc()) == NULL)
+    {
+        panic("cannot alloc idleproc.\n");
+    }
+
+    // check the proc structure
+    int *context_mem = (int *)kmalloc(sizeof(struct context));
+    memset(context_mem, 0, sizeof(struct context));
+    int context_init_flag = memcmp(&(idleproc->context), context_mem, sizeof(struct context));
+
+    int *proc_name_mem = (int *)kmalloc(PROC_NAME_LEN);
+    memset(proc_name_mem, 0, PROC_NAME_LEN);
+    int proc_name_flag = memcmp(&(idleproc->name), proc_name_mem, PROC_NAME_LEN);
+
+    if (idleproc->pgdir == boot_pgdir_pa && idleproc->tf == NULL && !context_init_flag && idleproc->state == PROC_UNINIT && idleproc->pid == -1 && idleproc->runs == 0 && idleproc->kstack == 0 && idleproc->need_resched == 0 && idleproc->parent == NULL && idleproc->mm == NULL && idleproc->flags == 0 && !proc_name_flag)
+    {
+        cprintf("alloc_proc() correct!\n");
+    }
+
+    idleproc->pid = 0;
+    idleproc->state = PROC_RUNNABLE;
+    idleproc->kstack = (uintptr_t)bootstack;
+    idleproc->need_resched = 1;
+    set_proc_name(idleproc, "idle");
+    nr_process++;
+
+    current = idleproc;
+
+    int pid = kernel_thread(init_main, "Hello world!!", 0);
+    if (pid <= 0)
+    {
+        panic("create init_main failed.\n");
+    }
+
+    initproc = find_proc(pid);
+    set_proc_name(initproc, "init");
+    assert(idleproc != NULL && idleproc->pid == 0);
+    assert(initproc != NULL && initproc->pid == 1);
+}
+
+int kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags)
+{
+    struct trapframe tf;
+    memset(&tf, 0, sizeof(struct trapframe));
+    tf.gpr.s0 = (uintptr_t)fn;
+    tf.gpr.s1 = (uintptr_t)arg;
+    tf.status = (read_csr(sstatus) | SSTATUS_SPP | SSTATUS_SPIE) & ~SSTATUS_SIE;
+    tf.epc = (uintptr_t)kernel_thread_entry;
+    return do_fork(clone_flags | CLONE_VM, 0, &tf);
+}
+
+static void
+put_kstack(struct proc_struct *proc)
+{
+    free_pages(kva2page((void *)(proc->kstack)), KSTACKPAGE);
+}
+
+int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
+{
+    int ret = -E_NO_FREE_PROC;
+    struct proc_struct *proc;
+    if (nr_process >= MAX_PROCESS)
+    {
+        goto fork_out;
+    }
+    ret = -E_NO_MEM;
+    proc = alloc_proc();
+    if (proc == NULL)
+    {
+        goto fork_out;
+    }
+    if (setup_kstack(proc) != 0)
+    {
+        goto bad_fork_cleanup_proc;
+    }
+    if (copy_mm(clone_flags, proc) != 0)
+    {
+        goto bad_fork_cleanup_kstack;
+    }
+    copy_thread(proc, stack, tf);
+    proc->pid=get_pid();
+    hash_proc(proc);
+    list_add(&proc_list, &proc->list_link);
+    wakeup_proc(proc);
+    nr_process++;
+    ret=proc->pid;
+    fork_out:
+        return ret;
+
+    bad_fork_cleanup_kstack:
+        put_kstack(proc);
+    bad_fork_cleanup_proc:
+        kfree(proc);
+    goto fork_out;
+}
 
 // set_proc_name - set the name of proc
 char *
@@ -158,6 +287,24 @@ hash_proc(struct proc_struct *proc)
     list_add(hash_list + pid_hashfn(proc->pid), &(proc->hash_link));
 }
 
+static int copy_mm(uint32_t clone_flags, struct proc_struct *proc)
+{
+    assert(current->mm == NULL);
+    return 0;
+}
+
+static void copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf)
+{
+    proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE - sizeof(struct trapframe));
+    *(proc->tf) = *tf;
+
+    proc->tf->gpr.a0 = 0;
+    proc->tf->gpr.sp = (esp == 0) ? (uintptr_t)proc->tf : esp;
+
+    proc->context.ra = (uintptr_t)forkret;
+    proc->context.sp = (uintptr_t)(proc->tf);
+}
+
 // find_proc - find proc frome proc hash_list according to pid
 struct proc_struct *
 find_proc(int pid)
@@ -192,12 +339,6 @@ setup_kstack(struct proc_struct *proc)
 }
 
 // put_kstack - free the memory space of process kernel stack
-static void
-put_kstack(struct proc_struct *proc)
-{
-    free_pages(kva2page((void *)(proc->kstack)), KSTACKPAGE);
-}
-
 
 // do_exit - called by sys_exit
 //   1. call exit_mmap & put_pgdir & mm_destroy to free the almost all memory space of process
@@ -218,26 +359,9 @@ init_main(void *arg)
     return 0;
 }
 
-//LAB4 function2 2411795: A -- allocate an unregistered process control block.
-static struct proc_struct *
-alloc_proc(void)
+void cpu_idle(void)
 {
-    struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
-    if (proc != NULL)
+    for (;;)
     {
-        // Clear the saved context, trapframe pointer, name and resource fields.
-        memset(proc, 0, sizeof(struct proc_struct));
-        proc->state = PROC_UNINIT;
-        proc->pid = -1;
-        // Kernel threads start with the shared kernel page table (physical PA).
-        proc->pgdir = boot_pgdir_pa;
-        list_init(&(proc->list_link));
-        list_init(&(proc->hash_link));
     }
-    return proc;
 }
-
-//LAB4 function2 YOUR CODE -- remaining thread creation/initialization functions.
-
-
-//LAB4 function3 YOUR CODE
